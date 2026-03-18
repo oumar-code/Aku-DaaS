@@ -37,3 +37,5 @@ See `.github/workflows/ci.yml` for CI/CD pipeline.
 
 ## License
 MIT
+# Aku-DaaS
+## Features - REST API for device management - Scalable Node.js backend
