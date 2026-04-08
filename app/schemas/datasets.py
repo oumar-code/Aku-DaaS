@@ -9,7 +9,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-
 # ---------------------------------------------------------------------------
 # Status enum
 # ---------------------------------------------------------------------------
@@ -40,7 +39,9 @@ class DatasetIngestRequest(BaseModel):
         ...,
         description="Originating Aku service identifier, e.g. 'Akudemy'",
     )
-    schema_version: str = Field("1.0", description="Dataset schema version for downstream compatibility")
+    schema_version: str = Field(
+        "1.0", description="Dataset schema version for downstream compatibility"
+    )
     tags: list[str] = Field(default_factory=list, description="Searchable classification tags")
     raw_payload: dict[str, Any] | None = Field(
         default=None,
