@@ -1,0 +1,604 @@
+components:
+  schemas:
+    AnonymiseRequest:
+      description: Optional runtime configuration for the anonymisation pipeline.
+      properties:
+        k_value:
+          default: 5
+          description: "k-anonymity parameter \u2014 minimum equivalence class size"
+          maximum: 100.0
+          minimum: 2.0
+          title: K Value
+          type: integer
+        quasi_identifiers:
+          description: Column names treated as quasi-identifiers for k-anonymity
+          items:
+            type: string
+          title: Quasi Identifiers
+          type: array
+        suppress_threshold:
+          default: 0.05
+          description: "Row suppression rate above which the job aborts (0\u20131\
+            \ fraction)"
+          maximum: 1.0
+          minimum: 0.0
+          title: Suppress Threshold
+          type: number
+      title: AnonymiseRequest
+      type: object
+    AnonymiseResponse:
+      properties:
+        dataset_id:
+          title: Dataset Id
+          type: string
+        k_value:
+          title: K Value
+          type: integer
+        message:
+          default: Anonymisation pipeline started as a background task.
+          title: Message
+          type: string
+        status:
+          $ref: '#/components/schemas/DatasetStatus'
+      required:
+      - dataset_id
+      - status
+      - k_value
+      title: AnonymiseResponse
+      type: object
+    Body_ingest_dataset_api_v1_datasets_ingest_post:
+      properties:
+        body:
+          anyOf:
+          - $ref: '#/components/schemas/DatasetIngestRequest'
+          - type: 'null'
+        description:
+          default: ''
+          title: Description
+          type: string
+        file:
+          anyOf:
+          - contentMediaType: application/octet-stream
+            type: string
+          - type: 'null'
+          description: Raw dataset file (CSV, Parquet, JSONL)
+          title: File
+        name:
+          default: ''
+          title: Name
+          type: string
+        schema_version:
+          default: '1.0'
+          title: Schema Version
+          type: string
+        source_service:
+          default: unknown
+          title: Source Service
+          type: string
+        tags:
+          default: ''
+          description: Comma-separated tag list
+          title: Tags
+          type: string
+      title: Body_ingest_dataset_api_v1_datasets_ingest_post
+      type: object
+    ConsentPurpose:
+      enum:
+      - analytics
+      - research
+      - personalisation
+      - third_party_sharing
+      - marketing
+      - service_improvement
+      title: ConsentPurpose
+      type: string
+    ConsentResponse:
+      properties:
+        consent_for:
+          items:
+            $ref: '#/components/schemas/ConsentPurpose'
+          title: Consent For
+          type: array
+        consent_given:
+          title: Consent Given
+          type: boolean
+        is_new:
+          default: false
+          description: True when the record was created (rather than updated) by this
+            request
+          title: Is New
+          type: boolean
+        jurisdiction:
+          title: Jurisdiction
+          type: string
+        updated_at:
+          format: date-time
+          title: Updated At
+          type: string
+        user_id:
+          title: User Id
+          type: string
+      required:
+      - user_id
+      - consent_given
+      - consent_for
+      - jurisdiction
+      - updated_at
+      title: ConsentResponse
+      type: object
+    ConsentUpsertRequest:
+      description: Request body for creating or updating a user's consent record.
+      properties:
+        consent_for:
+          description: Purposes explicitly consented to. Ignored (cleared) when consent_given
+            is False.
+          items:
+            $ref: '#/components/schemas/ConsentPurpose'
+          title: Consent For
+          type: array
+        consent_given:
+          description: Set True to grant consent, False to withdraw all consent
+          title: Consent Given
+          type: boolean
+        jurisdiction:
+          default: NG
+          description: ISO 3166-1 alpha-2 country code
+          maxLength: 5
+          minLength: 2
+          title: Jurisdiction
+          type: string
+      required:
+      - consent_given
+      title: ConsentUpsertRequest
+      type: object
+    DatasetIngestRequest:
+      description: JSON body variant of the ingest endpoint (multipart upload handled
+        at router level).
+      properties:
+        description:
+          default: ''
+          description: Optional dataset description
+          title: Description
+          type: string
+        name:
+          description: Human-readable dataset name
+          maxLength: 255
+          minLength: 1
+          title: Name
+          type: string
+        raw_payload:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          description: "Inline JSON dataset \u2014 mutually exclusive with multipart\
+            \ file upload"
+          title: Raw Payload
+        schema_version:
+          default: '1.0'
+          description: Dataset schema version for downstream compatibility
+          title: Schema Version
+          type: string
+        source_service:
+          description: Originating Aku service identifier, e.g. 'Akudemy'
+          title: Source Service
+          type: string
+        tags:
+          description: Searchable classification tags
+          items:
+            type: string
+          title: Tags
+          type: array
+      required:
+      - name
+      - source_service
+      title: DatasetIngestRequest
+      type: object
+    DatasetIngestResponse:
+      properties:
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        dataset_id:
+          description: Unique dataset ID (UUID v4)
+          title: Dataset Id
+          type: string
+        message:
+          default: Dataset ingested. Trigger anonymisation to proceed.
+          title: Message
+          type: string
+        name:
+          title: Name
+          type: string
+        status:
+          $ref: '#/components/schemas/DatasetStatus'
+      required:
+      - dataset_id
+      - name
+      - status
+      title: DatasetIngestResponse
+      type: object
+    DatasetStatus:
+      enum:
+      - pending
+      - ingested
+      - anonymising
+      - anonymised
+      - published
+      - failed
+      title: DatasetStatus
+      type: string
+    DatasetStatusResponse:
+      properties:
+        anonymised_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Anonymised At
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        dataset_id:
+          title: Dataset Id
+          type: string
+        error_detail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Populated when status is FAILED
+          title: Error Detail
+        name:
+          title: Name
+          type: string
+        published_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Published At
+        schema_version:
+          title: Schema Version
+          type: string
+        source_service:
+          title: Source Service
+          type: string
+        status:
+          $ref: '#/components/schemas/DatasetStatus'
+        tags:
+          items:
+            type: string
+          title: Tags
+          type: array
+        updated_at:
+          format: date-time
+          title: Updated At
+          type: string
+      required:
+      - dataset_id
+      - name
+      - status
+      - source_service
+      - schema_version
+      - tags
+      - created_at
+      - updated_at
+      title: DatasetStatusResponse
+      type: object
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          title: Detail
+          type: array
+      title: HTTPValidationError
+      type: object
+    MetadataPublishRequest:
+      description: Anonymised metadata record forwarded to Aku-IGHub for global distribution.
+      properties:
+        category:
+          description: "Metadata category \u2014 must match Aku-IGHub MetadataCategory\
+            \ vocabulary"
+          title: Category
+          type: string
+        dataset_id:
+          description: UUID of the anonymised dataset being published
+          title: Dataset Id
+          type: string
+        payload:
+          additionalProperties: true
+          description: "Anonymised summary payload \u2014 must not contain PII"
+          title: Payload
+          type: object
+        schema_version:
+          default: '1.0'
+          description: Payload schema version
+          title: Schema Version
+          type: string
+        source_service:
+          default: Aku-DaaS
+          description: Originating service identifier forwarded to IGHub
+          title: Source Service
+          type: string
+        tags:
+          description: Searchable classification tags
+          items:
+            type: string
+          title: Tags
+          type: array
+      required:
+      - dataset_id
+      - category
+      - payload
+      title: MetadataPublishRequest
+      type: object
+    MetadataPublishResponse:
+      properties:
+        dataset_id:
+          title: Dataset Id
+          type: string
+        ighub_acknowledged:
+          description: True when Aku-IGHub returned a successful response
+          title: Ighub Acknowledged
+          type: boolean
+        ighub_metadata_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Metadata ID assigned by Aku-IGHub; None if IGHub is unreachable
+          title: Ighub Metadata Id
+        publish_id:
+          description: DaaS-local publish event ID (UUID v4)
+          title: Publish Id
+          type: string
+        published_at:
+          format: date-time
+          title: Published At
+          type: string
+      required:
+      - publish_id
+      - dataset_id
+      - ighub_acknowledged
+      title: MetadataPublishResponse
+      type: object
+    ValidationError:
+      properties:
+        ctx:
+          title: Context
+          type: object
+        input:
+          title: Input
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          title: Location
+          type: array
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+      type: object
+info:
+  description: Data governance and anonymisation pipeline service for the Aku Platform.
+    Handles dataset ingestion, anonymisation pipeline execution, metadata publishing
+    to Aku-IGHub, and user consent management.
+  title: Aku-DaaS
+  version: 0.1.0
+openapi: 3.1.0
+paths:
+  /api/v1/consent/{user_id}:
+    get:
+      description: "Retrieve the current consent record for a user. Returns 404 if\
+        \ no consent record exists \u2014 clients should treat absence as implicit\
+        \ withdrawal and prompt the user to set preferences."
+      operationId: get_consent_api_v1_consent__user_id__get
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get user consent record
+      tags:
+      - consent
+    post:
+      description: "Upsert the consent record for a user. When `consent_given` is\
+        \ **False**, `consent_for` is automatically cleared regardless of the submitted\
+        \ value \u2014 a withdrawal applies to all purposes. Responds with 200 (update)\
+        \ or 201 (new record) via the `is_new` flag."
+      operationId: upsert_consent_api_v1_consent__user_id__post
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentUpsertRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentResponse'
+          description: Successful Response
+        '201':
+          description: Consent record created
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create or update user consent record
+      tags:
+      - consent
+  /api/v1/datasets/ingest:
+    post:
+      description: Accepts a raw dataset via **multipart file upload** (CSV / Parquet
+        / JSON Lines) **or** an inline JSON payload body. The dataset is stored in
+        INGESTED state and awaits an explicit anonymisation trigger. Authentication
+        required in production.
+      operationId: ingest_dataset_api_v1_datasets_ingest_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_ingest_dataset_api_v1_datasets_ingest_post'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetIngestResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Ingest a raw dataset
+      tags:
+      - datasets
+  /api/v1/datasets/{dataset_id}/anonymise:
+    post:
+      description: "Launches the anonymisation pipeline as an **async background task**.\
+        \ The dataset must be in INGESTED state. Poll `/status` to track progress.\
+        \ Returns 202 Accepted immediately \u2014 the pipeline runs concurrently."
+      operationId: trigger_anonymise_api_v1_datasets__dataset_id__anonymise_post
+      parameters:
+      - in: path
+        name: dataset_id
+        required: true
+        schema:
+          title: Dataset Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnonymiseRequest'
+              default:
+                k_value: 5
+                quasi_identifiers: []
+                suppress_threshold: 0.05
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnonymiseResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Trigger the anonymisation pipeline
+      tags:
+      - datasets
+  /api/v1/datasets/{dataset_id}/status:
+    get:
+      description: Return the current processing status for a dataset by its UUID.
+      operationId: get_dataset_status_api_v1_datasets__dataset_id__status_get
+      parameters:
+      - in: path
+        name: dataset_id
+        required: true
+        schema:
+          title: Dataset Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetStatusResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get anonymisation pipeline status
+      tags:
+      - datasets
+  /api/v1/metadata/publish:
+    post:
+      description: 'Publishes an anonymised dataset summary to Aku-IGHub via `POST
+        /api/v1/metadata/publish`. If IGHub is unreachable the record is still logged
+        locally and `ighub_acknowledged: false` is returned. Authentication required
+        in production.'
+      operationId: publish_metadata_api_v1_metadata_publish_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetadataPublishRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataPublishResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: "Publish anonymised metadata \u2192 Aku-IGHub"
+      tags:
+      - metadata
+  /health:
+    get:
+      operationId: health_health_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                title: Response Health Health Get
+                type: object
+          description: Successful Response
+      summary: Health
+      tags:
+      - ops
