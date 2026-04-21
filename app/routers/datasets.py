@@ -42,9 +42,7 @@ router = APIRouter(prefix="/api/v1/datasets", tags=["datasets"])
     ),
 )
 async def ingest_dataset(
-    file: UploadFile | None = File(
-        default=None, description="Raw dataset file (CSV, Parquet, JSONL)"
-    ),
+    file: UploadFile | None = File(default=None, description="Raw dataset file (CSV, Parquet, JSONL)"),
     name: str = Form(default=""),
     description: str = Form(default=""),
     source_service: str = Form(default="unknown"),
